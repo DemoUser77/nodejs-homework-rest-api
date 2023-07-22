@@ -53,7 +53,7 @@ export const updateContact = async (id, { name, email, phone }) => {
     return null;
   }
   contact[index] = { id, name, email, phone };
-  await updateContact(contact);
+  await updateContacts(contact);
   return contact[index];
 }
 
