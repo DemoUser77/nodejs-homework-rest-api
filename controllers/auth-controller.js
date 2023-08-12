@@ -1,3 +1,6 @@
+import fs from "fs/promises";
+import path from "path";
+import gravatar from "gravatar";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
@@ -6,7 +9,37 @@ import User from "../models/user.js"
 import { HttpError } from "../helpers/index.js";
 import { ctrlWrapper } from "../decorators/index.js";
 
+
 const { JWT_SECRET } = process.env;
+
+const avatarPath = path.resolve("public", "avatars");
+
+const registerAvatar = async (req, res) => {  
+    const { _id, avatarURL: oldAvatar } = req.user;
+    const { path: oldPath, filename } = req.file;
+
+    const avatarName = `${_id}_${filename}`;
+    const newPath = path.join(avatarPath, avatarName);
+        await fs.rename(oldPath, newPath);
+
+    const avatarURL = path.join("avatars", avatarName);
+    const updateAvatar =  await User.findByIdAndUpdate(_id, { avatarURL},{new:true,});
+    if (!updateAvatar) {
+        throw HttpError(404, 'Not found');
+    }
+      
+    if (oldAvatar ) {
+        const filenamePath = path.resolve("public", oldAvatar );
+        try {
+            await fs.unlink(filenamePath);
+        } catch (error) {
+             throw HttpError(404,'Not found')
+        }
+    }
+    res.json({avatarURL});
+    
+}
+
 
 const register = async (req, res) => {
     const { email, password } = req.body;
@@ -16,12 +49,15 @@ const register = async (req, res) => {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ ...req.body, password: hashPassword });
+    const avatar = gravatar.url(email);
+
+    const newUser = await User.create({ ...req.body, avatarURL: avatar, password: hashPassword });
 
     res.status(201).json({
         user: {
             email: newUser.email,
-            subscription: newUser.subscription,
+            subscription: newUser.subscription, 
+            
         }
     })
 }
@@ -68,8 +104,9 @@ const logout = async (req, res) => {
 }
 
 export default {
+    registerAvatar: ctrlWrapper(registerAvatar),
     register: ctrlWrapper(register),
     login: ctrlWrapper(login),
     getCurrent: ctrlWrapper(getCurrent),
-    logout:ctrlWrapper(logout),
+    logout: ctrlWrapper(logout),
 }
