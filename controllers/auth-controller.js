@@ -9,7 +9,6 @@ import User from "../models/user.js"
 import { HttpError } from "../helpers/index.js";
 import { ctrlWrapper } from "../decorators/index.js";
 
-
 const { JWT_SECRET } = process.env;
 
 const avatarPath = path.resolve("public", "avatars");
