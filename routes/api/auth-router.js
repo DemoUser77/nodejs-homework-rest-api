@@ -3,7 +3,7 @@ import usersSchemas from "../../schemas/users-schemas.js";
 import { validateBody } from "../../decorators/index.js";
 import  authenticate  from "../../middlewares/authenticate.js";
 import { authController } from "../../controllers/index.js";
-import { upload, resizeAvatar} from "../../middlewares/index.js";
+import { upload, resizeAvatar } from "../../middlewares/index.js";
 
 const authRouter = express.Router();
 

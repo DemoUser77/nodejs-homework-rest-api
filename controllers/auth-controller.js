@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
+
 import User from "../models/user.js"
 import { HttpError } from "../helpers/index.js";
 import { ctrlWrapper } from "../decorators/index.js";
@@ -14,6 +15,8 @@ const { JWT_SECRET } = process.env;
 const avatarPath = path.resolve("public", "avatars");
 
 const registerAvatar = async (req, res) => {  
+
+    try{
     const { _id, avatarURL: oldAvatar } = req.user;
     const { path: oldPath, filename } = req.file;
 
@@ -22,21 +25,27 @@ const registerAvatar = async (req, res) => {
         await fs.rename(oldPath, newPath);
 
     const avatarURL = path.join("avatars", avatarName);
-    const updateAvatar =  await User.findByIdAndUpdate(_id, { avatarURL},{new:true,});
-    if (!updateAvatar) {
-        throw HttpError(404, 'Not found');
-    }
-      
-    if (oldAvatar ) {
-        const filenamePath = path.resolve("public", oldAvatar );
-        try {
-            await fs.unlink(filenamePath);
-        } catch (error) {
-             throw HttpError(404,'Not found')
+    const updateAvatar = await User.findByIdAndUpdate(_id, { avatarURL }, { new: true, });
+        if (!updateAvatar) {
+            throw HttpError(401, "Not authorized");
         }
+      
+        if (oldAvatar) {
+            const filenamePath = path.resolve("public", oldAvatar);
+            try {
+                await fs.unlink(filenamePath);
+            } catch (error) {
+                throw HttpError(404, 'Not found')
+            }
+        }
+      
+        
+    res.json({ avatarURL });
+        
+    } catch (error) {
+        res.status(404).json({error: "Avatar update failed"})
     }
-    res.json({avatarURL});
-    
+  
 }
 
 
