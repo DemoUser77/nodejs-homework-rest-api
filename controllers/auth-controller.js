@@ -30,8 +30,12 @@ const registerAvatar = async (req, res) => {
         await fs.unlink(oldPath);
         return error;
     }
-
-    await User.findByIdAndUpdate(_id, { avatarURL });
+    
+    const updateAvatar = await User.findByIdAndUpdate(_id, { avatarURL },{new:true});
+    if (!updateAvatar) {
+        throw HttpError(401, "Not authrized");
+    }
+    
     res.json({ avatarURL });
 
 }
