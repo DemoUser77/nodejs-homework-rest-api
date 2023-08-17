@@ -1,12 +1,45 @@
+import fs from "fs/promises";
+import path from "path";
+import gravatar from "gravatar";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import Jimp from "jimp";
+
 
 import User from "../models/user.js"
 import { HttpError } from "../helpers/index.js";
 import { ctrlWrapper } from "../decorators/index.js";
 
 const { JWT_SECRET } = process.env;
+
+
+const registerAvatar = async (req, res) => {  
+    const { _id } = req.user;
+    const { path: oldPath, originalname } = req.file;
+    const avatarName = `${_id}_${originalname}`;
+    const newPath = path.resolve("public", "avatars", avatarName);
+    const avatarURL = path.join("avatars", avatarName);
+   
+    try {
+        const image = await Jimp.read(oldPath);
+        await image.resize(250, 250);
+        await image.writeAsync(oldPath);
+        await fs.rename(oldPath, newPath);
+    } catch (error) {
+        await fs.unlink(oldPath);
+        return error;
+    }
+    
+    const updateAvatar = await User.findByIdAndUpdate(_id, { avatarURL },{new:true});
+    if (!updateAvatar) {
+        throw HttpError(401, "Not authrized");
+    }
+    
+    res.json({ avatarURL });
+
+}
+
 
 const register = async (req, res) => {
     const { email, password } = req.body;
@@ -16,12 +49,15 @@ const register = async (req, res) => {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ ...req.body, password: hashPassword });
+    const avatar = gravatar.url(email);
+
+    const newUser = await User.create({ ...req.body, avatarURL: avatar, password: hashPassword });
 
     res.status(201).json({
         user: {
             email: newUser.email,
-            subscription: newUser.subscription,
+            subscription: newUser.subscription, 
+            
         }
     })
 }
@@ -68,8 +104,9 @@ const logout = async (req, res) => {
 }
 
 export default {
+    registerAvatar: ctrlWrapper(registerAvatar),
     register: ctrlWrapper(register),
     login: ctrlWrapper(login),
     getCurrent: ctrlWrapper(getCurrent),
-    logout:ctrlWrapper(logout),
+    logout: ctrlWrapper(logout),
 }

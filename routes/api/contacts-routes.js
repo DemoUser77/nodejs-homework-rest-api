@@ -3,7 +3,7 @@ import express from "express";
 import contactsSchemas from "../../schemas/contacts-schemas.js";
 import { validateBody } from "../../decorators/index.js";
 import {contactsController} from "../../controllers/index.js";
-import { isEmptyBody, isValidId, isEmptyBodyFavorite } from "../../middlewares/index.js";
+import {  isEmptyBody, isValidId, isEmptyBodyFavorite } from "../../middlewares/index.js";
 import authenticate from "../../middlewares/authenticate.js";
 
 const contactsRouter = express.Router();
